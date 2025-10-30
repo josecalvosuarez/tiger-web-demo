@@ -1,0 +1,68 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-demo
+  namespace: demo-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-demo
+  template:
+    metadata:
+      labels:
+        app: nginx-demo
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            # From Secret (sensitive)
+            - name: APP_MESSAGE
+              valueFrom:
+                secretKeyRef:
+                  name: nginx-demo-secret
+                  key: APP_MESSAGE
+            # From ConfigMap (non-sensitive)
+            - name: APP_COLOR
+              valueFrom:
+                configMapKeyRef:
+                  name: nginx-demo-config
+                  key: APP_COLOR
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            # Put NGINX vhost config in place
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+            # Drop the render script into nginx's entrypoint directory
+            - name: entrypoint-scripts
+              mountPath: /docker-entrypoint.d
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: nginx-demo-config
+            items:
+              - key: default.conf
+                path: default.conf
+        - name: entrypoint-scripts
+          configMap:
+            name: nginx-demo-config
+            defaultMode: 0755
+            items:
+              - key: 50-render.sh
+                path: 50-render.sh

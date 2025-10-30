@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-demo-config
+  namespace: demo-nginx
+data:
+  # Non-sensitive config value (will become an env var)
+  APP_COLOR: "teal"
+
+  # NGINX server config (simple static site)
+  default.conf: |
+    server {
+      listen       80;
+      server_name  _;
+      access_log   /var/log/nginx/access.log;
+      error_log    /var/log/nginx/error.log warn;
+
+      location /healthz {
+        return 200 'ok';
+        add_header Content-Type text/plain;
+      }
+
+      location / {
+        root   /usr/share/nginx/html;
+        index  index.html;
+      }
+    }
+
+  # Startup script: renders index.html using env vars.
+  # The official nginx image runs /docker-entrypoint.d/*.sh at container start.
+  50-render.sh: |
+    #!/usr/bin/env sh
+    set -eu
+    : "${APP_MESSAGE:=Hello from Kubernetes!}"
+    : "${APP_COLOR:=steelblue}"
+    cat > /usr/share/nginx/html/index.html <<EOF
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>nginx demo</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        html,body{margin:0;padding:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif}
+        main{min-height:100vh;display:grid;place-items:center;background:#f7f7f7}
+        .card{padding:2rem 2.5rem;border-radius:16px;background:white;box-shadow:0 8px 30px rgba(0,0,0,0.08);text-align:center}
+        h1{margin:0 0 .5rem 0;font-size:2rem;color:#222}
+        p{margin:.25rem 0;color:#444}
+        .pill{display:inline-block;margin-top:.75rem;padding:.25rem .6rem;border-radius:999px;background:${APP_COLOR};color:white;font-weight:600}
+        code{background:#f0f0f0;border-radius:6px;padding:.2rem .4rem}
+      </style>
+    </head>
+    <body>
+      <main>
+        <div class="card">
+          <h1>It works! 🚀</h1>
+          <p>${APP_MESSAGE}</p>
+          <p class="pill">APP_COLOR=${APP_COLOR}</p>
+          <p>Served by <code>nginx</code> in Kubernetes.</p>
+        </div>
+      </main>
+    </body>
+    </html>
+    EOF
