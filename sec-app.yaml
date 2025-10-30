@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: nginx-demo-secret
+  name: nginx
   namespace: demo-nginx
 type: Opaque
 stringData:
