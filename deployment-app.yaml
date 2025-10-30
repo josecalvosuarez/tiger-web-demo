@@ -62,7 +62,7 @@ spec:
         - name: entrypoint-scripts
           configMap:
             name: nginx-demo-config
-            defaultMode: 0755
+            defaultMode: 0765
             items:
               - key: 50-render.sh
                 path: 50-render.sh

@@ -59,6 +59,7 @@ data:
           <p class="pill">APP_COLOR=${APP_COLOR}</p>
           <p>Served by <code>nginx</code> in Kubernetes.</p>
         </div>
+        <hr>
       </main>
     </body>
     </html>
